@@ -5,8 +5,8 @@ export const CONFIG = {
   sensorToBottomMm: 2000,   // Abstand Sensor -> Boden bei leerer Cuve (mm)
   maxFillMm: 1700,          // maximale Fuellhoehe (mm)
   tankLitersAtMax: 4000,    // Liter bei voller Cuve
-  lat: 48.55,               // Balbronn
-  lon: 7.42,
+  lat: 48.581076,           // 11b Rue des Noyers, 67310 Balbronn (exakte Adresse)
+  lon: 7.435638,
   tz: "Europe/Paris",
   offlineMin: 30,           // ab wann gilt der Sensor als offline
   // Anomalie-Schwellen (spaeter anpassbar)
