@@ -136,7 +136,7 @@ async function main() {
   // ---- A. Fuellstand-Ereignisse ----
   if (fresh && pct != null) {
     const zone = levelZone(pct);
-    if (zone !== "normal" && zone !== state.lastZone) {
+    if (zone !== "normal" && zone !== state.lastZone && cool("level", 3 * HOUR)) {
       if (zone === "critique") queue.push(MSG.levelCritique());
       else if (zone === "full") queue.push(MSG.levelFull(pct));
       else if (zone === "reserve") queue.push(MSG.levelReserve());
