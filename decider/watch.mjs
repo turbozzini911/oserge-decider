@@ -77,10 +77,13 @@ async function getWeather() {
 }
 
 // ---- Push senden ----
-// entries: [{ key, token }]
+// entries: [{ key, token, prefs }]. Schickt nur an Empfaenger, die diese
+// category nicht abgewaehlt haben (fehlende/leere prefs = alles an, Standard).
+const DEFAULT_PREFS = { niveau: true, anomalie: true, capteur: true, resume: true, meteo: true };
 async function push(entries, msg) {
-  if (!entries.length) { console.log("(kein Token)", msg.title); return; }
-  const tokens = entries.map(e => e.token);
+  const recipients = entries.filter(e => (e.prefs?.[msg.category] ?? true) !== false);
+  if (!recipients.length) { console.log("(niemand abonniert)", msg.title); return; }
+  const tokens = recipients.map(e => e.token);
   const res = await messaging.sendEachForMulticast({
     tokens,
     notification: { title: msg.title, body: msg.body },
@@ -90,24 +93,28 @@ async function push(entries, msg) {
     }
   });
   console.log("Push:", msg.title, "->", res.successCount + "/" + tokens.length);
-  // ungueltige Tokens aufraeumen
+  // ungueltige Tokens aufraeumen (Indizes beziehen sich auf "recipients", nicht "entries"!)
   res.responses.forEach((r, i) => {
     if (!r.success) {
       const code = r.error?.code || "";
       if (code.includes("registration-token-not-registered") || code.includes("invalid-argument")) {
-        db.ref("tokens/" + entries[i].key).remove().catch(() => {});
+        db.ref("tokens/" + recipients[i].key).remove().catch(() => {});
+        db.ref("prefs/" + recipients[i].key).remove().catch(() => {});
       }
     }
   });
 }
 
 async function main() {
-  const [cuve, state0, tokensObj] = await Promise.all([
+  const [cuve, state0, tokensObj, prefsObj] = await Promise.all([
     get("cuve", null),
     get("state", {}),
-    get("tokens", {})
+    get("tokens", {}),
+    get("prefs", {})
   ]);
-  const entries = Object.entries(tokensObj || {}).map(([key, token]) => ({ key, token }));
+  const entries = Object.entries(tokensObj || {}).map(([key, token]) => ({
+    key, token, prefs: (prefsObj && prefsObj[key]) || DEFAULT_PREFS
+  }));
   const state = state0 || {};
   state.cooldowns = state.cooldowns || {};
   state.sent = state.sent || {};
@@ -134,6 +141,11 @@ async function main() {
   }
 
   // ---- A. Fuellstand-Ereignisse ----
+  // Abklingzeit wie beim Wetter: ohne sie feuert bei jedem Zonenwechsel sofort
+  // eine neue Meldung. Solange der Sensor nicht final kalibriert ist (oder bei
+  // echtem Rauschen im Messwert), kann die berechnete Zone kurzzeitig hin- und
+  // herkippen - ohne Bremse kommt dann ein Schwall verschiedener Meldungen auf
+  // einmal statt einer. 3 Stunden wie beim Wetter, damit es konsistent ist.
   if (fresh && pct != null) {
     const zone = levelZone(pct);
     if (zone !== "normal" && zone !== state.lastZone && cool("level", 3 * HOUR)) {
