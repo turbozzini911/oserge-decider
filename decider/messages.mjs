@@ -36,27 +36,34 @@ export const frInt = (n) => Math.round(n).toLocaleString("fr-FR");
 export const etatOf = (pct) =>
   pct > 30 ? "tout va bien" : (pct >= 10 ? "à surveiller" : "réserve basse");
 
-// Jede Funktion liefert { title, body }
+// Jede Funktion liefert { category, title, body }. Die category dient der
+// Benachrichtigungs-Einstellung in der App: watch.mjs schickt eine Meldung nur
+// an Empfaenger, deren gespeicherte Praeferenz fuer diese category nicht
+// explizit auf false steht (Standard: alles an).
+//
+// Kategorien: "niveau" (Fuellstand), "anomalie" (Leck/Abfall/Trockenheit),
+// "capteur" (online/offline), "resume" (geplante Zusammenfassungen),
+// "meteo" (Wetter).
 export const MSG = {
-  levelCritique: () => ({ title: "Marée haute à la cave.", body: "La cuve approche de sa capacité maximale." }),
-  levelFull:     (pct) => ({ title: "Eau là là, Serge !", body: `La cuve est remplie à ${Math.round(pct)} %.` }),
-  levelReserve:  () => ({ title: "Eau secours !", body: "Le niveau est passé sous le seuil de réserve." }),
-  levelVide:     () => ({ title: "Serge est au régime sec.", body: "Il est temps de faire la danse de la pluie." }),
+  levelCritique: () => ({ category: "niveau",   title: "Marée haute à la cave.", body: "La cuve approche de sa capacité maximale." }),
+  levelFull:     (pct) => ({ category: "niveau", title: "Eau là là, Serge !", body: `La cuve est remplie à ${Math.round(pct)} %.` }),
+  levelReserve:  () => ({ category: "niveau",   title: "Eau secours !", body: "Le niveau est passé sous le seuil de réserve." }),
+  levelVide:     () => ({ category: "niveau",   title: "Serge est au régime sec.", body: "Il est temps de faire la danse de la pluie." }),
 
-  dropRapide:    (litres, depuis) => ({ title: "Qui a retiré le bouchon ?", body: `${frInt(litres)} litres ont disparu depuis ${depuis}.` }),
-  fuite:         () => ({ title: "Houston, on a peut-être une fuite.", body: "Ou quelqu'un arrose avec beaucoup d'enthousiasme." }),
-  manquePluie:   () => ({ title: "Mais où est passée l'eau ?", body: "O'Serge signale un sérieux manque de pluie." }),
+  dropRapide:    (litres, depuis) => ({ category: "anomalie", title: "Qui a retiré le bouchon ?", body: `${frInt(litres)} litres ont disparu depuis ${depuis}.` }),
+  fuite:         () => ({ category: "anomalie", title: "Houston, on a peut-être une fuite.", body: "Ou quelqu'un arrose avec beaucoup d'enthousiasme." }),
+  manquePluie:   () => ({ category: "anomalie", title: "Mais où est passée l'eau ?", body: "La cuve signale un sérieux manque de pluie." }),
 
-  offline:       () => ({ title: "Serge a plongé trop profond.", body: "Le capteur ne répond plus." }),
-  online:        () => ({ title: "Bloup, bloup… me revoilà !", body: "Les nouvelles mesures sont disponibles." }),
+  offline:       () => ({ category: "capteur", title: "Serge a plongé trop profond.", body: "Le capteur ne répond plus." }),
+  online:        () => ({ category: "capteur", title: "Bloup, bloup… me revoilà !", body: "La bouée est reconnectée!" }),
 
-  matin:         (litres, pct, etat) => ({ title: "Le point d'eau du matin", body: `${frInt(litres)} litres, ${Math.round(pct)} %, ${etat}.` }),
-  bilanJour:     (litres) => ({ title: "Le rapport de Serge", body: `${frInt(litres)} litres récupérés aujourd'hui.` }),
-  bilanSemaine:  (litres) => ({ title: "Belle pêche !", body: `O'Serge a collecté ${frInt(litres)} litres cette semaine.` }),
+  matin:         (litres, pct, etat) => ({ category: "resume", title: "Le point d'eau du matin", body: `${frInt(litres)} litres, ${Math.round(pct)} %, ${etat}.` }),
+  bilanJour:     (litres) => ({ category: "resume", title: "Le rapport de Serge", body: `${frInt(litres)} litres récupérés aujourd'hui.` }),
+  bilanSemaine:  (litres) => ({ category: "resume", title: "Belle pêche !", body: `O'Serge a collecté ${frInt(litres)} litres cette semaine.` }),
 
-  pluieApproche: (espace) => ({ title: "Les gouttes sont en approche.", body: `Espace disponible : ${frInt(espace)} L.` }),
-  nuages:        () => ({ title: "Les nuages arrivent.", body: "O'Serge se prépare." }),
-  pluieEnCours:  () => ({ title: "Serge sent venir la pluie.", body: "La réserve pourrait bientôt se remplir." })
+  pluieApproche: (espace) => ({ category: "meteo", title: "Les gouttes sont en approche.", body: `Espace disponible : ${frInt(espace)} L.` }),
+  nuages:        () => ({ category: "meteo", title: "Les nuages arrivent.", body: "La cuve se prépare." }),
+  pluieEnCours:  () => ({ category: "meteo", title: "Serge sent venir la pluie.", body: "La réserve pourrait bientôt se remplir." })
 };
 
 // Fuellstand-Zone (mit einfacher Schwellenlogik)
