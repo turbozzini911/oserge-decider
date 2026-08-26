@@ -1,18 +1,42 @@
+# O'Serge! - Decider
+#
+# Liest alle 15 Minuten den Füllstand aus Firebase, holt das Wetter und schickt
+# passende Push-Meldungen an Serges Handy.
+#
+# INSTALLATION: als .github/workflows/oserge-decider.yml ins GitHub-Repo legen.
+#
+# BENOETIGTE SECRETS (Settings -> Secrets and variables -> Actions):
+#   OSERGE_DB_URL          = https://sergiometre-d4e87-default-rtdb.europe-west1.firebasedatabase.app
+#   GOOGLE_SERVICE_ACCOUNT = kompletter Inhalt der Service-Account-JSON aus Firebase
+#
+# Action-Versionen: checkout@v5 und setup-node@v5 laufen auf Node.js 24.
+# Node.js 20 wird am 16.09.2026 von den Runnern entfernt - die alten v4-Versionen
+# wuerden danach scheitern.
+
 name: O'Serge Decider
 
 on:
   schedule:
-    - cron: "*/15 * * * *"
-  workflow_dispatch: {}
+    - cron: "*/15 * * * *"   # alle 15 Minuten
+  workflow_dispatch: {}        # manuell startbar (zum Testen)
+
+# Verhindert, dass zwei Laeufe gleichzeitig laufen (z.B. der geplante alle
+# 15 Min. und ein manueller Testlauf). Ohne das koennen beide denselben alten
+# Zustand lesen, bevor einer ihn zurueckschreibt, und dieselbe Meldung doppelt
+# verschicken. cancel-in-progress:false heisst: der zweite Lauf wartet, statt
+# den ersten abzubrechen.
+concurrency:
+  group: oserge-decider
+  cancel-in-progress: false
 
 jobs:
   watch:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: "20"
+          node-version: "22"
       - name: Install
         working-directory: decider
         run: npm install
